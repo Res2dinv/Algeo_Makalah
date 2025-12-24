@@ -337,7 +337,7 @@
  \@esphack}
 
 \def\@nocite#1{\begingroup\let\protect\string% normalize active chars
- \xdef\@no@sparg{\expandafter\@cite@ignsp#1,\: ,\:}\% remove spaces
+ \xdef\@no@sparg{\expandafter\@cite@ignsp#1,\: ,\:}
  \if@filesw \immediate\write\@newciteauxhandle % =\@auxout, except with multibib
     {\string\citation {\@no@sparg}}\fi
  \endgroup}

@@ -1,10 +1,8 @@
 \documentclass[conference]{IEEEtran}
 \IEEEoverridecommandlockouts
-%Template version as of 6/27/2024
 
 \usepackage{cite}
 \usepackage{amsmath,amssymb,amsfonts}
-\usepackage{listings}
 \usepackage{hyperref}
 \hypersetup{
     colorlinks=true,
@@ -12,46 +10,35 @@
     citecolor=black,
     urlcolor=blue
 }
-\lstset{
-    language=Python,
-    basicstyle=\ttfamily\tiny,
-    keywordstyle=\color{blue},
-    stringstyle=\color{red},
-    commentstyle=\color{green},
-    breaklines=true,
-    frame=single,
-    showstringspaces=false,
-    numbers=left,
-    numberstyle=\tiny\color{gray},
-    breakatwhitespace=true,
-    columns=flexible
-}
 \usepackage{algorithmic}
 \usepackage{graphicx}
 \usepackage{textcomp}
 \usepackage{xcolor}
+\usepackage{float}
+\usepackage{subcaption}
 \def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
     T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
 
 \begin{document}
 
-\title{Implementation of Reinhard Method Using Orthogonal Vector Basis $l\alpha\beta$ for Day-to-Night Lighting Simulation}
+\title{Implementation of Reinhard Method Using Orthogonal Vector Basis $l\alpha\beta$ for Color Transfer: Analysis of Success and Failure Modes}
 
-\author{\IEEEauthorblockN{Student Name}
+\author{\IEEEauthorblockN{Ishaq Irfan}
 \IEEEauthorblockA{\textit{School of Electrical Engineering and Informatics} \\
 \textit{Bandung Institute of Technology}\\
 Bandung, Indonesia \\
-email@std.stei.itb.ac.id}
+13524094@mahasiswa.itb.ac.id\\
+ishaqirfanfrzl@gmail.com}
 }
 
 \maketitle
 
 \begin{abstract}
-This paper discusses the application of Linear Algebra concepts, especially change of basis and vector orthogonality, in digital image processing. The Reinhard method is used to transfer color statistics from a target image to a source image. The main focus of this research is to prove the effectiveness of the $l\alpha\beta$ color space which has orthogonal vector basis to minimize correlation between color channels, unlike the RGB space which is highly correlated. In addition, this paper proposes a modification to the standard algorithm by manipulating Luminance vector statistics to simulate atmospheric changes from day to night. Experimental results show that transformation to orthogonal basis successfully decorrelates the data (proven by covariance matrix approaching diagonal) and color statistics transfer can naturally change image atmosphere.
+This paper discusses the application of Linear Algebra concepts, especially change of basis and vector orthogonality, in digital image processing. The Reinhard method is used to transfer color statistics from a target image to a source image. The main focus of this research is to prove the effectiveness of the $l\alpha\beta$ color space which has orthogonal vector basis to minimize correlation between color channels, unlike the RGB space which is highly correlated. Through systematic experiments across nine source-target combinations, we analyze both successful transfers and failure modes, revealing that success depends critically on structural similarity, target color variation, and semantic compatibility. Experimental results show that transformation to orthogonal basis successfully decorrelates the data for most images (92-94\% correlation reduction), but this mathematical correctness does not guarantee perceptually acceptable results when global statistics are applied to semantically complex scenes.
 \end{abstract}
 
 \begin{IEEEkeywords}
-Linear Algebra, Vector Space, Orthogonal Basis, Color Transfer, Reinhard, Basis Transformation.
+Linear Algebra, Vector Space, Orthogonal Basis, Color Transfer, Reinhard, Basis Transformation, Covariance Analysis.
 \end{IEEEkeywords}
 
 \section{Introduction}
@@ -59,32 +46,36 @@ Linear Algebra, Vector Space, Orthogonal Basis, Color Transfer, Reinhard, Basis 
 \subsection{Background}
 Color is a fundamental feature in digital image processing and computer vision, as it strongly influences how a scene is perceived. A digital image represents visual information through spatial sampling and light intensity quantization. In practice, images are commonly stored in the RGB (Red, Green, Blue) color space, where each pixel is described as a combination of three primary color intensities. While this representation is convenient for image acquisition and display, it is not always suitable for analytical color manipulation.
 
-One task that highlights this limitation is color transfer, where color statistics from a reference image are applied to another image. In applications such as photography and film, this technique is often used to approximate a change in atmosphere, for example by making an image appear darker or more “night-like” by borrowing colors from a night scene.
+One task that highlights this limitation is color transfer, where color statistics from a reference image are applied to another image. In applications such as photography and film, this technique is often used to approximate a change in atmosphere, for example by making an image appear darker or more "night-like" by borrowing colors from a night scene.
 
-Applying color transfer directly in RGB space often leads to unintuitive results. Although the RGB axes are mathematically orthogonal, the channels are statistically correlated in natural images. As a consequence, modifying one channel can unintentionally affect brightness or color balance, making controlled manipulation difficult.
+Applying color transfer directly in RGB space often leads to hard to predict results. Although the RGB axes are mathematically orthogonal, the channels are statistically correlated in natural images. As a consequence, modifying one channel can unintentionally affect brightness or color balance, making controlled manipulation difficult.
 
 To better study and perform color transfer, it is useful to transform image data into a different vector space where luminance and chromatic information are more clearly separated. From a linear algebra perspective, this corresponds to a change of basis that aims to reduce inter-channel correlation and simplify statistical analysis.
 
-Reinhard et al. (2001) proposed a method that transforms RGB values into the $l\alpha\beta$ color space, which is constructed using logarithmic transformations and principal component analysis of natural images. In this space, the channels are approximately decorrelated, allowing simple operations such as matching the mean and standard deviation of each channel between images.
+Reinhard et al. (2001)\cite{reinhard2001} proposed a method that transforms RGB values into the $l\alpha\beta$ color space, which is constructed using logarithmic transformations and principal component analysis of natural images. In this space, the channels are approximately decorrelated, allowing simple operations such as matching the mean and standard deviation of each channel between images.
 
-However, it is important to note that this approach does not truly understand scene semantics or lighting conditions. The resulting “atmosphere change” is purely statistical: color distributions from one image are imposed onto another. As a result, effects such as day-to-night transformation may resemble applying a global color filter rather than physically accurate illumination changes.
+However, it is important to note that this approach does not truly understand scene semantics or lighting conditions. The resulting "atmosphere change" is purely statistical: color distributions from one image are imposed onto another. As a result, effects such as day-to-night transformation may resemble applying a global color filter rather than physically accurate illumination changes.
 
-This paper focuses on the mathematical aspects of this method rather than its perceptual realism. The goal is to analyze the linear algebraic transformations involved, examine channel decorrelation through covariance analysis, and demonstrate how simple statistical operations in an alternative basis can significantly change image appearance, while also highlighting the limitations of such an approach.
+This paper focuses on analyzing both the mathematical effectiveness and practical limitations of this method. The goal is to examine the linear algebraic transformations involved, analyze channel decorrelation through covariance analysis, demonstrate how statistical operations in an alternative basis can change image appearance, and critically evaluate when and why the method fails.
 
 \section{Literature Review}
 
 \subsection{Human Visual System and Color Space}
-The human eye has three types of cone cells that are sensitive to different light wavelengths: \textit{Long} (L), \textit{Medium} (M), and \textit{Short} (S). Ruderman et al. found that the responses of these cells have very high correlation due to overlapping sensitivity spectra. To process visual information efficiently, the brain "decorrelates" these signals into three independent perceptual pathways: light-dark pathway (luminance), red-green pathway, and yellow-blue pathway. The $l\alpha\beta$ color space is designed to mathematically mimic this neural processing mechanism.
+The human eye has three types of cone cells that are sensitive to different light wavelengths: \textit{Long} (L), \textit{Medium} (M), and \textit{Short} (S). Ruderman et al. \cite{ruderman1998} found that the responses of these cells have very high correlation due to overlapping sensitivity spectra. To process visual information efficiently, the brain "decorrelates" these signals into three independent perceptual pathways: light-dark pathway (luminance), red-green pathway, and yellow-blue pathway. The $l\alpha\beta$ color space is designed to mathematically mimic this neural processing mechanism.
 
 \subsection{Linear Algebra in Image Processing}
 Digital images are often treated only as 2D arrays, but in the context of color processing, images are more precisely viewed as a set of vectors in space $\mathbb{R}^n$. Basic operations such as color rotation, saturation, and \textit{grayscale} conversion are basically linear transformations $T(\mathbf{v}) = M\mathbf{v}$. Choosing the right basis $M$ greatly determines the ease and quality of processing results. Orthogonal basis such as those used in JPEG compression (DCT basis) or Lab color space are chosen because of their ability to minimize data redundancy.
+
+\subsection{Related Work}
+While the Reinhard method provides an elegant global solution, subsequent research has addressed its limitations. Pitié et al. \cite{pitie2007} proposed probability distribution matching in local neighborhoods to handle multi-region scenes. Tai et al. \cite{tai2005} combined segmentation with statistical transfer to preserve semantic boundaries. More recently, deep learning approaches \cite{gatys2016} have enabled content-aware style transfer that respects object semantics. These developments highlight that color statistics alone, while mathematically sound, cannot fully capture the complexity of natural image structure.
 
 \subsection{Objectives}
 The objectives of this research are:
 \begin{enumerate}
     \item Implement manual linear transformation (RGB to LMS to $l\alpha\beta$).
     \item Analyze image covariance matrix to validate orthogonality properties.
-    \item Simulate night effect by manipulating mean vector on Luminance channel.
+    \item Systematically evaluate transfer quality across diverse source-target pairs.
+    \item Identify and characterize failure modes to understand method limitations.
 \end{enumerate}
 
 \section{Theory}
@@ -105,7 +96,7 @@ d(\mathbf{v}_1, \mathbf{v}_2) = \|\mathbf{v}_1 - \mathbf{v}_2\| = \sqrt{(r_1 - r
 Color manipulation between color spaces involves linear transformation, which is a mapping function $T: \mathbb{R}^3 \to \mathbb{R}^3$ that preserves vector addition and scalar multiplication operations. In digital computation implementation, this transformation is efficiently represented using matrix multiplication.
 
 \subsubsection{RGB to LMS Conversion}
-The first step in the Reinhard algorithm is to convert the RGB basis to LMS (\textit{Long, Medium, Short}) basis. This basis simulates the spectral response of three types of cone cells in the human retina. This transformation is done by multiplying the pixel vector $\mathbf{v}_{RGB}$ with a transformation matrix $M_{RGB \to LMS}$. The elements of this matrix are determined based on psychophysical measurements and color matching experiments.
+The first step in the Reinhard algorithm is to convert the RGB basis to LMS (\textit{Long, Medium, Short}) basis. This basis simulates the spectral response of three types of cone cells in the human retina. This transformation is done by multiplying the pixel vector $\mathbf{v}_{RGB}$ with a transformation matrix $M_{RGB \to LMS}$. The elements of this matrix are determined based on visual perception measurements and color matching experiments.
 \begin{equation}
 \mathbf{v}_{LMS} = M_{RGB \to LMS} \cdot \mathbf{v}_{RGB}
 \end{equation}
@@ -166,23 +157,16 @@ r_1 \cdot r_3 = (1)(1) + (1)(-1) + (1)(0) = 1 - 1 + 0 = 0
 \begin{equation}
 r_2 \cdot r_3 = (1)(1) + (1)(-1) + (-2)(0) = 1 - 1 + 0 = 0
 \end{equation}
-Because all dot products are zero, the basis set $\{r_1, r_2, r_3\}$ is proven to be \textbf{orthogonal}. This property validates that information on channels $l, \alpha,$ and $\beta$ is truly mathematically separated. Modifying channel $l$ (light-dark) will not ``leak'' and change color nuance on channels $\alpha$ or $\beta$, which is the key to this method's success.
-
-\subsection{Orthogonality}
-In the code, transformation matrix to $l\alpha\beta$ is constructed using coefficients like $\frac{1}{\sqrt{3}}, \frac{1}{\sqrt{6}}, \frac{1}{\sqrt{2}}$. These values are chosen to ensure that new basis vectors are orthogonal. Two vectors $\mathbf{u}$ and $\mathbf{v}$ are said to be orthogonal if their dot product is zero:
-\begin{equation}
-\mathbf{u} \cdot \mathbf{v} = 0
-\end{equation}
-This orthogonality property is important so that manipulation on one channel (for example channel $l$ for lighting) does not cause distortion on color channels ($\alpha$ and $\beta$).
+Because all dot products are zero, the basis set $\{r_1, r_2, r_3\}$ is proven to be orthogonal. This property validates that information on channels $l, \alpha,$ and $\beta$ is truly mathematically separated. Modifying channel $l$ (light-dark) will not ``leak'' and change color nuance on channels $\alpha$ or $\beta$, which is the key to this method's theoretical advantage.
 
 \subsection{Vector Statistics (Mean \& Standard Deviation)}
 The Reinhard method bases color transfer on matching color vector distribution statistics. We calculate the ``center point'' (Mean) and ``spread'' (Standard Deviation) of the pixel point cloud in vector space.
 \begin{itemize}
-    \item \textbf{Mean Vector} ($\boldsymbol{\mu}$):
+    \item Mean Vector ($\boldsymbol{\mu}$):
     \begin{equation}
     \boldsymbol{\mu} = \frac{1}{N} \sum_{i=1}^{N} \mathbf{v}_i
     \end{equation}
-    \item \textbf{Standard Deviation} ($\boldsymbol{\sigma}$):
+    \item Standard Deviation ($\boldsymbol{\sigma}$):
     \begin{equation}
     \boldsymbol{\sigma} = \sqrt{\frac{1}{N} \sum_{i=1}^{N} (\mathbf{v}_i - \boldsymbol{\mu})^2}
     \end{equation}
@@ -231,189 +215,270 @@ I_{out} &= \mathbf{V}_{LMS} \cdot M_{LMS \to RGB}
 \end{align}
 Final result $I_{out}$ is then \textit{clipped} to range $[0, 1]$ for visual display.
 
-\section{Experiments and Analysis}
 
-\subsection{Image Data Sources}
-Images used in this experiment were collected from various online sources with the following attribution:
-\begin{itemize}
-    \item \textbf{Source 1 (Fuji)}: Wikipedia Commons (View of Mount Fuji from Owakudani).
-    \item \textbf{Source 2 (Forest)}: Andrew Kumler, Cascadia Wildlands (via Environment America).
-    \item \textbf{Source 3 (People)}: Club950.co.uk.
-    \item \textbf{Target 1 (Deepsea)}: US Fish \& Wildlife Service (via Mashable).
-    \item \textbf{Target 2 (Darknight)}: Wallpaperflare (Moon dark night sky).
-    \item \textbf{Target 3 (Sunset)}: Freepik (Sunset sea).
-\end{itemize}
+\section{Visual Results}
 
-\begin{figure*}[t]
+\begin{figure*}[htbp]
 \centering
+\includegraphics[width=0.3\linewidth]{../code/source/source1_fuji.png}
+\includegraphics[width=0.3\linewidth]{../code/source/source2_forest.png}
+\includegraphics[width=0.3\linewidth]{../code/source/source3_people.png}
+\caption{Source Images. From left to right: Source 1 (Fuji) \cite{img:fuji}, Source 2 (Forest) \cite{img:forest}, Source 3 (People) \cite{img:people}.}
+\label{fig:source_dataset}
+\end{figure*}
 
-\vspace{1mm}
+\begin{figure*}[htbp]
+\centering
 \includegraphics[width=0.3\linewidth]{../code/target/target1_deepsea.png}
 \includegraphics[width=0.3\linewidth]{../code/target/target2_darknight.png}
 \includegraphics[width=0.3\linewidth]{../code/target/target3_sunset.png}
-
-\caption{\textbf{Image Dataset}. Target Images (Deepsea \cite{img:deepsea}, Darknight \cite{img:darknight}, Sunset \cite{img:sunset}).}
-\label{fig:dataset}
+\caption{Target Images. From left to right: Target 1 (Deepsea) \cite{img:deepsea}, Target 2 (Darknight) \cite{img:darknight}, Target 3 (Sunset) \cite{img:sunset}.}
+\label{fig:target_dataset}
 \end{figure*}
-
-\subsection{Global Experiment Results}
-We conducted comprehensive tests by combining 3 source images with 3 target images that have different atmospheric characteristics.
 
 \begin{figure*}[htbp]
 \centering
 \includegraphics[width=0.24\linewidth]{../code/source/source1_fuji.png}
+\includegraphics[width=0.24\linewidth]{../code/target/target1_deepsea.png}
 \includegraphics[width=0.24\linewidth]{../code/output/result_source1_fuji_TO_target1_deepsea.jpg}
 \includegraphics[width=0.24\linewidth]{../code/output/result_source1_fuji_TO_target2_darknight.jpg}
-\includegraphics[width=0.24\linewidth]{../code/output/result_source1_fuji_TO_target3_sunset.jpg}
-\caption{Experiment 1: Fuji Transformation \cite{img:fuji}. From Left to Right: Original Image, Result with Deepsea Target \cite{img:deepsea}, Result with Darknight Target \cite{img:darknight}, Result with Sunset Target \cite{img:sunset}.}
-\label{fig:fuji_all}
-\end{figure*}
-
-\begin{figure*}[htbp]
-\centering
-\includegraphics[width=0.24\linewidth]{../code/source/source2_forest.png}
-\includegraphics[width=0.24\linewidth]{../code/output/result_source1_fuji_TO_target3_sunset.jpg}
-\includegraphics[width=0.24\linewidth]{../code/output/result_source2_forest_TO_target2_darknight.jpg}
-\includegraphics[width=0.24\linewidth]{../code/output/result_source2_forest_TO_target3_sunset.jpg}
-\caption{Experiment 2: Forest Transformation \cite{img:forest}. From Left to Right: Original Image, Result with Deepsea Target, Result with Darknight Target, Result with Sunset Target.}
-\label{fig:forest_all}
+\caption{Source 1 (Fuji) \cite{img:fuji} transfers. From left: Original, Target 1 (Deepsea) \cite{img:deepsea}, Result s1t1 (Success), Result s1t2 (Failure - statistical collapse)}
+\label{fig:fuji_success_fail}
 \end{figure*}
 
 \begin{figure*}[htbp]
 \centering
 \includegraphics[width=0.24\linewidth]{../code/source/source3_people.png}
-\includegraphics[width=0.24\linewidth]{../code/output/result_source3_people_TO_target1_deepsea.jpg}
-\includegraphics[width=0.24\linewidth]{../code/output/result_source3_people_TO_target2_darknight.jpg}
+\includegraphics[width=0.24\linewidth]{../code/target/target3_sunset.png}
 \includegraphics[width=0.24\linewidth]{../code/output/result_source3_people_TO_target3_sunset.jpg}
-\caption{Experiment 3: People Transformation \cite{img:people}. From Left to Right: Original Image, Result with Deepsea Target, Result with Darknight Target, Result with Sunset Target.}
-\label{fig:people_all}
+\includegraphics[width=0.24\linewidth]{../code/output/result_source3_people_TO_target2_darknight.jpg}
+\caption{Source 3 (People) \cite{img:people} transfers. From left: Original, Target 3 (Sunset) \cite{img:sunset}, Result s3t3 (Semantic failure), Result s3t2 (Extreme darkening)}
+\label{fig:people_failures}
 \end{figure*}
 
-Experimental results in Figures \ref{fig:fuji_all}, \ref{fig:forest_all}, and \ref{fig:people_all} show the consistency of the Reinhard method. Statistical transfer of $\mu$ and $\sigma$ in orthogonal space $l\alpha\beta$ effectively moves the "mood" from target to source. Source images with originally different RGB histograms (Snow White, Forest Green, Skin Tones) can be forced to follow target statistical distribution (Sea Blue, Night Black, Sunset Orange) without destroying image spatial structure.
+\begin{figure*}[htbp]
+\includegraphics[width=0.24\linewidth]{../code/source/source2_forest.png}
+\includegraphics[width=0.24\linewidth]{../code/output/result_source2_forest_TO_target1_deepsea.jpg}
+\includegraphics[width=0.24\linewidth]{../code/output/result_source2_forest_TO_target2_darknight.jpg}
+\includegraphics[width=0.24\linewidth]{../code/output/result_source2_forest_TO_target3_sunset.jpg}
+\caption{Forest (Source 2) \cite{img:forest} transfers show consistent failure across all targets due to multimodal color distribution}
+\label{fig:forest_all}
+\end{figure*}
 
-\subsection{Mathematical Validation of Orthogonality}
-One of the main claims of this method is that $l\alpha\beta$ space has orthogonal basis, thus minimizing inter-channel correlation. This is proven empirically through Covariance Matrix ($C$) from image data. Covariance matrix size $3 \times 3$ where element $C_{i,j}$ (for $i \neq j$) shows correlation level between channels $i$ and $j$.
+\clearpage
 
-In source image (RGB), calculation results show:
+\section{Analysis of Results}
+
+
+\subsection{Quantitative Analysis of Color Space Transformation}
+
+The covariance analysis in Table~\ref{tab:covariance} reveals the effectiveness of the $l\alpha\beta$ transformation in decorrelating color channels:
+
+\begin{table}[h]
+\centering
+\caption{Off-diagonal covariance comparison between RGB and $l\alpha\beta$ spaces}
+\label{tab:covariance}
+\begin{tabular}{lcc}
+\hline
+\textbf{Image} & RGB Space & $l\alpha\beta$ Space \\
+\hline
+Source 1 (Fuji) & 0.015136 & 0.001166 \\
+Source 2 (Forest) & 0.023603 & 0.030573 \\
+Source 3 (People) & 0.057476 & 0.003200 \\
+\hline
+\end{tabular}
+\end{table}
+
+For Sources 1 and 3, the transformation achieves significant decorrelation (92-94\% reduction in off-diagonal correlation). However, Source 2 shows an \textit{increase} in correlation (0.024 $\rightarrow$ 0.031), suggesting that images with complex spectral characteristics (multiple greens, browns, shadowing) may not benefit equally from the orthogonal transformation. This is the first indication that the method's effectiveness is content-dependent.
+
+In Source 1 (RGB space), calculation results show:
 \begin{equation}
-C_{RGB} \approx \begin{bmatrix} 
+C_{RGB} = \begin{bmatrix} 
 0.0179 & 0.0176 & 0.0155 \\ 
 0.0176 & 0.0293 & 0.0350 \\ 
 0.0155 & 0.0350 & 0.0470 
 \end{bmatrix}
 \end{equation}
-Note that non-diagonal element values (like $0.0176$ and $0.0350$) are quite significant compared to diagonal elements (variance). This shows information redundancy: if Red channel is bright, Green and Blue channels are also likely bright.
-
-In contrast, after transformation to $l\alpha\beta$ space, covariance matrix becomes:
+Note that non-diagonal element values are significant compared to diagonal elements (variance), showing information redundancy. After transformation to $l\alpha\beta$ space:
 \begin{equation}
-C_{l\alpha\beta} \approx \begin{bmatrix} 
+C_{l\alpha\beta} = \begin{bmatrix} 
 0.0648 & -0.0033 & -0.0015 \\ 
 -0.0033 & 0.0017 & 0.0004 \\ 
 -0.0015 & 0.0004 & 0.0001 
 \end{bmatrix}
 \end{equation}
-It can be seen that non-diagonal elements approach zero (order $10^{-3}$ to $10^{-4}$). In linear algebra terms, this matrix approaches \textbf{Diagonal Matrix}. Diagonal covariance matrix indicates that basis components are uncorrelated. This analysis quantitatively verifies that the basis transformation performed successfully separates image information into independent components.
+Non-diagonal elements approach zero (order $10^{-3}$ to $10^{-4}$), indicating the matrix approaches a diagonal matrix, verifying successful decorrelation for this image type.
 
-\subsection{Statistical and Visual Analysis}
-Mean vector ($\boldsymbol{\mu}$) obtained from target image (night) shows significant decrease in $l$ (Luminance) component compared to source image (day).
+\subsection{Result Explanation: Successful Transfer}
+
+The s1t1 transfer (shown in Figure \ref{fig:fuji_success_fail}, third image) produced visually coherent results because:
+
+\begin{enumerate}
+    \item Structural compatibility: Both scenes feature large, uniform regions (sky/water, mountain/underwater formations) with smooth gradients. Global statistics meaningfully describe both images.
+    
+    \item Appropriate luminance mapping: 
+    \begin{align}
+    \mu_{\text{source}}^{l} &= -0.431 \rightarrow \mu_{\text{target}}^{l} = -1.740 \\
+    \sigma_{\text{source}}^{l} &= 0.255 \rightarrow \sigma_{\text{target}}^{l} = 0.404
+    \end{align}
+    The transfer darkens the scene while increasing contrast, perceptually matching the transition from daylight to deep underwater lighting.
+    
+    \item Preserved chromatic relationships: Blue sky maps to blue-green water tones, and mountain earth tones shift to darker underwater rock colors. Similar semantic structure preserves recognizability.
+\end{enumerate}
+
+\subsection{Result Explanation: Failure Mode 1 (Extreme Statistics)}
+
+The s1t2 transfer (Fuji $\rightarrow$ dark night, Figure \ref{fig:fuji_success_fail}, fourth image) produces an almost completely black image due to \textit{statistical collapse}:
+
+\begin{align}
+\mu_{\text{target}}^{\alpha} &= 7.64 \times 10^{-4} \\
+\sigma_{\text{target}}^{\alpha} &= 6.85 \times 10^{-7} \quad \text{(effectively zero)}
+\end{align}
+
+When the target has near-zero standard deviation, the transfer formula
+\begin{equation}
+\text{result}_{lab} = \left(\text{source}_{lab} - \mu_{\text{source}}\right) \cdot \frac{\sigma_{\text{target}}}{\sigma_{\text{source}} + \epsilon} + \mu_{\text{target}}
+\end{equation}
+multiplies all source variation by $\approx 10^{-7}$, compressing the image to uniform darkness. The mathematical cause:
+\begin{equation}
+\text{scaling factor} = \frac{\sigma_{\text{target}}^{\alpha}}{\sigma_{\text{source}}^{\alpha}} = \frac{6.85 \times 10^{-7}}{0.041} \approx 1.67 \times 10^{-5}
+\end{equation}
+Every pixel's chromatic variation is multiplied by $0.0000167$, removing all color distinctions. This reveals a critical limitation: the method assumes meaningful target color variation. For targets with minimal dynamic range (night scenes, monochromatic images), transfer becomes ineffective.
+
+\subsection{Result Explanation: Failure Mode 2 (Semantic Mismatch)}
+
+The s3t3 transfer (Figure \ref{fig:people_failures}, third image) demonstrates fundamental semantic blindness:
+
 \begin{itemize}
-    \item Mean Source ($l$): $\approx -0.43$ (in log domain)
-    \item Mean Target ($l$): $\approx -1.60$ (much darker)
+    \item Unnatural colorization: Skin, grass, and sky receive identical global transformation, resulting in orange-tinted skin (matching sunset) while sky retains blue patches.
+    
+    \item Loss of local coherence: The sunset target has high $\beta$ variance (red-green axis = 0.065), applied globally:
+    \begin{align}
+    \mu_{\text{target}}^{\beta} &= -0.210 \quad \text{(strong red-green shift)} \\
+    \sigma_{\text{target}}^{\beta} &= 0.261 \quad \text{(high variation)}
+    \end{align}
+    These describe the sunset gradient (dark ground to orange sky), but global application creates color ``patches'' respecting no object boundaries.
+    
+    \item Perceptual failure: While mathematically correct (output statistics match target), results are unacceptable because humans expect semantic consistency.
 \end{itemize}
-The algorithm transfers this characteristic by shifting the $l$ histogram distribution of source image to the left (becoming darker). Because of orthogonality proven above, extreme shift on $l$ axis does not cause weird color cast on $\alpha$ and $\beta$ axes. Visual results in Figure \ref{fig:res} show smooth transition: bright blue daytime sky becomes deep dark blue, and ground objects become silhouettes, accurately mimicking night visual characteristics.
+
+This highlights that color is not independent of content, a core assumption violated by global methods.
+
+\subsection{Result Explanation: Failure Mode 3 (Complex Scene)}
+
+The forest source (Figure \ref{fig:forest_all}) performed poorly across all targets because:
+
+\begin{enumerate}
+    \item Failed decorrelation: Forest's $l\alpha\beta$ covariance (0.031) indicates transformation didn't decorrelate channels. Complex spectral mixtures (tree trunks, moss, shadows, foliage) resist simple basis transformations.
+    
+    \item Multimodal distributions: Forest scenes have multiple color clusters (dark shadows, bright foliage, brown bark). Global mean/std captures none accurately, producing muddy transfers.
+    
+    \item Detail loss: Fine texture depends on local contrast. Global std scaling cannot preserve details with different target contrast.
+\end{enumerate}
 
 \section{Discussion}
-Although this method is very effective and computationally efficient ($\mathcal{O}(N)$), this global-based method has limitations. Because it only uses one global statistic ($\boldsymbol{\mu}, \boldsymbol{\sigma}$) for the entire image, this method assumes that image color distribution is unimodal (one peak). If image has complex color composition (for example, bright foreground object contrasts with background), global transfer might ``flatten'' nuances. However, for atmospheric simulation cases (like weather or time effects), global approach actually gives more visually coherent results compared to local approach which might create boundary artifacts between segments.
 
-\subsection{Code Implementation}
-Here is the Python implementation of Global Color Transfer algorithm. Code uses \texttt{numpy} for efficient vector matrix operations.
+\subsection{Mathematical Correctness vs. Perceptual Quality}
+Our experiments reveal a crucial disconnect: mathematical decorrelation (92-94\% for Sources 1 and 3) does not guarantee perceptually acceptable results. The orthogonal transformation successfully separates statistical dependencies, as proven by near-diagonal covariance matrices, yet this separation operates at a global level blind to semantic content.
 
-\begin{figure*}[t]
-\begin{lstlisting}[caption=Global Color Transfer Implementation (Python), label={lst:code}]
-import numpy as np
+\subsection{Comparison to Modern Approaches}
+Our findings explain why subsequent methods moved beyond global statistics:
+\begin{itemize}
+    \item Local transfer methods \cite{pitie2007} address multi-region problems through neighborhood-based statistics
+    \item Segmentation-based methods\cite{tai2005} transfer statistics per semantic segment
+    \item Deep learning approaches \cite{gatys2016} learn content-aware transformations respecting object boundaries
+\end{itemize}
 
-# --- Transformation Matrix Constants Definition ---
-# RGB to LMS Matrix (Ruderman et al.)
-M_RGB_TO_LMS = np.array([[0.3811, 0.5783, 0.0402],
-                         [0.1967, 0.7244, 0.0782],
-                         [0.0241, 0.1288, 0.8444]])
+The Reinhard method's elegance, three matrix multiplications and basic statistics, comes at the cost of semantic awareness. For 2001, this trade-off was reasonable. Today, it serves as a foundational technique highlighting why content-aware processing is essential.
 
-# LMS to LAB Matrix (Orthogonal Basis)
-# Using constants 1/sqrt(3), 1/sqrt(6), 1/sqrt(2)
-r3, r6, r2 = np.sqrt(3), np.sqrt(6), np.sqrt(2)
-M_LMS_TO_LAB = np.array([[1/r3, 1/r3, 1/r3],
-                         [1/r6, 1/r6, -2/r6],
-                         [1/r2, -1/r2, 0.0]])
+\subsection{Practical Recommendations}
+For practitioners considering the Reinhard method:
+\begin{enumerate}
+    \item Pre-screen pairs: Calculate $\sigma_{\text{target}}$. If any $\sigma < 0.01$, expect poor results.
+    \item Use for re-lighting, not re-coloring: Excels at brightness/mood adjustment for similar scenes.
+    \item Consider scene complexity: Simple landscapes work; portraits and textured scenes often fail.
+    \item Combine with masking: Manually segment important subjects, transfer statistics separately for foreground/background.
+\end{enumerate}
 
-# Pre-compute Matrix Inverse for reconstruction efficiency
-M_LMS_TO_RGB = np.linalg.inv(M_RGB_TO_LMS)
-M_LAB_TO_LMS = np.linalg.inv(M_LMS_TO_LAB)
-
-def rgb_to_lab(img_rgb):
-    """Convert RGB image to Lab through Logarithmic LMS"""
-    h, w, c = img_rgb.shape
-    img_flat = img_rgb.reshape((-1, 3))
-    
-    # 1. RGB -> LMS
-    img_lms = img_flat @ M_RGB_TO_LMS.T
-    # Avoid log(0) with epsilon 1e-8
-    img_lms = np.log10(img_lms + 1e-8)
-    
-    # 2. LMS -> Lab (Change of Basis to Orthogonal)
-    img_lab = img_lms @ M_LMS_TO_LAB.T
-    return img_lab.reshape((h, w, 3))
-
-def lab_to_rgb(img_lab):
-    """Reconstruct Lab image to RGB"""
-    h, w, c = img_lab.shape
-    img_flat = img_lab.reshape((-1, 3))
-    
-    # 1. Lab -> LMS
-    img_lms = img_flat @ M_LAB_TO_LMS.T
-    img_lms = np.power(10, img_lms) # Inverse Log
-    
-    # 2. LMS -> RGB
-    img_rgb = img_lms @ M_LMS_TO_RGB.T
-    return img_rgb.reshape((h, w, 3))
-
-def global_transfer(source, target):
-    """
-    Perform global color statistics transfer from target to source.
-    """
-    # 1. Convert both images to Lab space
-    src_lab = rgb_to_lab(source)
-    tgt_lab = rgb_to_lab(target)
-    
-    # 2. Calculate Statistics (Mean & Std Dev) per channel
-    # axis=(0,1) calculates spatial statistics (all pixels)
-    s_mean, s_std = np.mean(src_lab, axis=(0,1)), np.std(src_lab, axis=(0,1))
-    t_mean, t_std = np.mean(tgt_lab, axis=(0,1)), np.std(tgt_lab, axis=(0,1))
-    
-    # 3. Linear Statistical Transfer
-    # x' = (sigma_t / sigma_s) * (x - mu_s) + mu_t
-    res_lab = (src_lab - s_mean) * (t_std / (s_std + 1e-6)) + t_mean
-    
-    # 4. Reconstruct to RGB and Clipping
-    res_rgb = lab_to_rgb(res_lab)
-    return np.clip(res_rgb, 0, 1)
-\end{lstlisting}
-\caption{Global Color Transfer Implementation using Reinhard Method}
-\label{fig:code}
-\end{figure*}
+\subsection{Limitations of Global Approach}
+Although computationally efficient ($\mathcal{O}(N)$), the global method assumes unimodal color distributions. For images with complex compositions (bright foreground contrasting with background), global transfer may flatten nuances. However, for atmospheric simulation (weather, time effects), the global approach provides visually coherent results without boundary artifacts from segmentation.
 
 \section{Conclusion}
-This research successfully demonstrates the application of Linear Algebra concepts, particularly change of basis and vector orthogonality, in digital image processing through the Reinhard color transfer method. The transformation to $l\alpha\beta$ space with orthogonal basis effectively decorrelates color channels, as proven by covariance matrix analysis. This orthogonality property enables independent manipulation of luminance and chromaticity, allowing natural color transfer and day-to-night simulation without complex segmentation. The global approach, while having limitations with complex color compositions, provides computationally efficient and visually coherent results for atmospheric simulation applications.
+
+This research successfully demonstrates Linear Algebra concepts, particularly change of basis and vector orthogonality, in digital image processing through the Reinhard color transfer method. Transformation to $l\alpha\beta$ space effectively decorrelates channels for most natural images (92-94\% correlation reduction), as validated through covariance analysis. This orthogonality enables independent luminance and chromaticity manipulation.
+
+However, systematic evaluation across nine source-target combinations reveals that mathematical decorrelation alone cannot guarantee perceptual success. The method succeeds when source and target share structural similarity (s1t1: landscape to landscape), but fails significantly when targets have extreme statistics (s1t2, s3t2: $\sigma \approx 10^{-7}$ causing statistical collapse) or when semantic content mismatches (s3t3: orange-tinted skin from sunset transfer).
+
+These failures are not implementation flaws but fundamental limitations of any global statistical approach. Color statistics cannot capture image semantics, a lesson driving two decades of research toward content-aware methods. Nevertheless, for appropriate use cases (re-lighting structurally similar scenes), the Reinhard method remains effective, requiring only seconds of computation without training data. Its value today is educational: demonstrating why modern computer vision requires semantic understanding beyond mathematical elegance.
 
 \section*{Acknowledgment}
-The author would like to thank the IF2123 Linear Algebra and Geometry course instructors at Bandung Institute of Technology for their guidance and support in this research.
+The author thanks the IF2123 Linear Algebra and Geometry course instructors at Bandung Institute of Technology for guidance in this research.
 
 \begin{thebibliography}{00}
-\bibitem{img:fuji} Wikipedia Commons, ``View of Mount Fuji from Owakudani,'' Available online.
-\bibitem{img:forest} Andrew Kumler, Cascadia Wildlands (via Environment America), ``Forest landscape,'' Available online.
-\bibitem{img:people} Club950.co.uk, ``People gathering,'' Available online.
-\bibitem{img:deepsea} US Fish \& Wildlife Service (via Mashable), ``Deep sea underwater,'' Available online.
-\bibitem{img:darknight} Wallpaperflare, ``Moon dark night sky,'' Available online.
-\bibitem{img:sunset} Freepik, ``Sunset sea,'' Available online.
+
+\bibitem{reinhard2001}
+E. Reinhard, M. Adhikhmin, B. Gooch, and P. Shirley,
+``Color transfer between images,''
+\textit{IEEE Computer Graphics and Applications}, vol. 21, no. 5, pp. 34--41, 2001.
+
+\bibitem{ruderman1998}
+D. L. Ruderman, T. W. Cronin, and C. C. Chiao,
+``Statistics of cone responses to natural images: implications for visual coding,''
+\textit{Journal of the Optical Society of America A}, vol. 15, no. 8, pp. 2036--2045, 1998.
+
+\bibitem{pitie2007}
+F. Pitié, A. C. Kokaram, and R. Dahyot,
+``Automated colour grading using colour distribution transfer,''
+\textit{Computer Vision and Image Understanding}, vol. 107, no. 1-2, pp. 123--137, 2007.
+
+\bibitem{tai2005}
+Y.-W. Tai, J. Jia, and C.-K. Tang,
+``Local color transfer via probabilistic segmentation by expectation-maximization,''
+\textit{IEEE Conference on Computer Vision and Pattern Recognition (CVPR)}, vol. 1, pp. 747--754, 2005.
+
+\bibitem{gatys2016}
+L. A. Gatys, A. S. Ecker, and M. Bethge,
+``Image style transfer using convolutional neural networks,''
+\textit{IEEE Conference on Computer Vision and Pattern Recognition (CVPR)}, pp. 2414--2423, 2016.
+
+\bibitem{img:fuji} 
+``View of Mount Fuji from Ōwakudani,''
+Wikimedia Commons, 2021.
+Available: \url{https://upload.wikimedia.org/wikipedia/commons/thumb/f/f8/View_of_Mount_Fuji_from_%C5%8Cwakudani_20211202.jpg/1280px-View_of_Mount_Fuji_from_%C5%8Cwakudani_20211202.jpg}
+[Accessed: Dec. 9, 2025, 10:23]
+
+\bibitem{img:forest} 
+A. Kumler (Cascadia Wildlands),
+``Ancient forest scene,''
+Environment America.
+Available: \url{https://environmentamerica.org/articles/save-americas-oldest-forests/}
+[Accessed: Dec. 9, 2025, 10:35]
+
+\bibitem{img:people} 
+``Children playing on sand dunes,''
+Club 950 Cornwall.
+Available: \url{https://club950.co.uk/}
+[Accessed: Dec. 9, 2025, 10:47]
+
+\bibitem{img:deepsea} 
+National Oceanic and Atmospheric Administration,
+``Underwater exploration at Northeast Canyons and Seamounts Marine Monument,''
+U.S. Fish and Wildlife Service.
+Available: \url{https://www.fws.gov/media/noaa-underwater-exploration-vessel}
+[Accessed: Dec. 9, 2025, 11:02]
+
+\bibitem{img:darknight} 
+``Dark night scene,''
+PeakPX.
+Available: \url{https://www.peakpx.com/en/hd-wallpaper-desktop-fbgfq}
+[Accessed: Dec. 9, 2025, 11:15]
+
+\bibitem{img:sunset} 
+``Dark sunset landscape,''
+Freepik.
+Available: \url{https://www.freepik.com/free-photos-vectors/dark-sunset}
+[Accessed: Dec. 9, 2025, 11:28]
+
 \end{thebibliography}
 
 \end{document}
