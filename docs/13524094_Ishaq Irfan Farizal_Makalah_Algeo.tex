@@ -16,6 +16,12 @@
 \usepackage{xcolor}
 \usepackage{float}
 \usepackage{subcaption}
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\lfoot{Makalah IF2123 Aljabar Linier dan Geometri - Teknik Informatika ITB-Semester I Tahun 2025/2026}
+\renewcommand{\headrulewidth}{0pt}
+\renewcommand{\footrulewidth}{0pt}
+
 \def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
     T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
 
@@ -23,15 +29,18 @@
 
 \title{Implementation of Reinhard Method Using Orthogonal Vector Basis $l\alpha\beta$ for Color Transfer: Analysis of Success and Failure Modes}
 
-\author{\IEEEauthorblockN{Ishaq Irfan}
-\IEEEauthorblockA{\textit{School of Electrical Engineering and Informatics} \\
-\textit{Bandung Institute of Technology}\\
-Bandung, Indonesia \\
-13524094@mahasiswa.itb.ac.id\\
-ishaqirfanfrzl@gmail.com}
+\author{\IEEEauthorblockN{Ishaq Irfan Farizal - 13524094}
+\IEEEauthorblockA{\textit{Program Studi Teknik Informatika} \\
+\textit{Sekolah Teknik Elektro dan Informatika}\\
+Institut Teknologi Bandung, Jl. Ganesha 10 Bandung 40132, Indonesia \\
+13524094@mahasiswa.itb.ac.id, ishaqirfanfrzl@gmail.com}
 }
 
 \maketitle
+\renewcommand{\headrulewidth}{0pt}
+\renewcommand{\footrulewidth}{0pt}
+\thispagestyle{fancy}
+
 
 \begin{abstract}
 This paper discusses the application of Linear Algebra concepts, especially change of basis and vector orthogonality, in digital image processing. The Reinhard method is used to transfer color statistics from a target image to a source image. The main focus of this research is to prove the effectiveness of the $l\alpha\beta$ color space which has orthogonal vector basis to minimize correlation between color channels, unlike the RGB space which is highly correlated. Through systematic experiments across nine source-target combinations, we analyze both successful transfers and failure modes, revealing that success depends critically on structural similarity, target color variation, and semantic compatibility. Experimental results show that transformation to orthogonal basis successfully decorrelates the data for most images (92-94\% correlation reduction), but this mathematical correctness does not guarantee perceptually acceptable results when global statistics are applied to semantically complex scenes.
@@ -239,22 +248,13 @@ Final result $I_{out}$ is then \textit{clipped} to range $[0, 1]$ for visual dis
 \begin{figure*}[htbp]
 \centering
 \includegraphics[width=0.24\linewidth]{../code/source/source1_fuji.png}
-\includegraphics[width=0.24\linewidth]{../code/target/target1_deepsea.png}
 \includegraphics[width=0.24\linewidth]{../code/output/result_source1_fuji_TO_target1_deepsea.jpg}
 \includegraphics[width=0.24\linewidth]{../code/output/result_source1_fuji_TO_target2_darknight.jpg}
-\caption{Source 1 (Fuji) \cite{img:fuji} transfers. From left: Original, Target 1 (Deepsea) \cite{img:deepsea}, Result s1t1 (Success), Result s1t2 (Failure - statistical collapse)}
+\includegraphics[width=0.24\linewidth]{../code/output/result_source1_fuji_TO_target3_sunset.jpg}
+\caption{Source 1 (Fuji) \cite{img:fuji} transfers. From left: Original, Result s1t1 (Success), Result s1t2 (Failure), Result s1t3 (Failure)}
 \label{fig:fuji_success_fail}
 \end{figure*}
 
-\begin{figure*}[htbp]
-\centering
-\includegraphics[width=0.24\linewidth]{../code/source/source3_people.png}
-\includegraphics[width=0.24\linewidth]{../code/target/target3_sunset.png}
-\includegraphics[width=0.24\linewidth]{../code/output/result_source3_people_TO_target3_sunset.jpg}
-\includegraphics[width=0.24\linewidth]{../code/output/result_source3_people_TO_target2_darknight.jpg}
-\caption{Source 3 (People) \cite{img:people} transfers. From left: Original, Target 3 (Sunset) \cite{img:sunset}, Result s3t3 (Semantic failure), Result s3t2 (Extreme darkening)}
-\label{fig:people_failures}
-\end{figure*}
 
 \begin{figure*}[htbp]
 \includegraphics[width=0.24\linewidth]{../code/source/source2_forest.png}
@@ -263,6 +263,16 @@ Final result $I_{out}$ is then \textit{clipped} to range $[0, 1]$ for visual dis
 \includegraphics[width=0.24\linewidth]{../code/output/result_source2_forest_TO_target3_sunset.jpg}
 \caption{Forest (Source 2) \cite{img:forest} transfers show consistent failure across all targets due to multimodal color distribution}
 \label{fig:forest_all}
+\end{figure*}
+
+\begin{figure*}[htbp]
+\centering
+\includegraphics[width=0.24\linewidth]{../code/source/source3_people.png}
+\includegraphics[width=0.24\linewidth]{../code/output/result_source3_people_TO_target1_deepsea.jpg}
+\includegraphics[width=0.24\linewidth]{../code/output/result_source3_people_TO_target2_darknight.jpg}
+\includegraphics[width=0.24\linewidth]{../code/output/result_source3_people_TO_target3_sunset.jpg}
+\caption{Source 3 (People) \cite{img:people} transfers. From left: Original, Result s1t1 (Failure), Result s1t2 (Failure), Result s3t3 (Semantic failure), Result s3t2 (Extreme darkening)}
+\label{fig:people_failures}
 \end{figure*}
 
 \clearpage
@@ -311,7 +321,7 @@ Non-diagonal elements approach zero (order $10^{-3}$ to $10^{-4}$), indicating t
 
 \subsection{Result Explanation: Successful Transfer}
 
-The s1t1 transfer (shown in Figure \ref{fig:fuji_success_fail}, third image) produced visually coherent results because:
+The s1t1 transfer (shown in Figure \ref{fig:fuji_success_fail}, second image) produced visually coherent results because:
 
 \begin{enumerate}
     \item Structural compatibility: Both scenes feature large, uniform regions (sky/water, mountain/underwater formations) with smooth gradients. Global statistics meaningfully describe both images.
@@ -412,7 +422,7 @@ However, systematic evaluation across nine source-target combinations reveals th
 These failures are not implementation flaws but fundamental limitations of any global statistical approach. Color statistics cannot capture image semantics, a lesson driving two decades of research toward content-aware methods. Nevertheless, for appropriate use cases (re-lighting structurally similar scenes), the Reinhard method remains effective, requiring only seconds of computation without training data. Its value today is educational: demonstrating why modern computer vision requires semantic understanding beyond mathematical elegance.
 
 \section*{Acknowledgment}
-The author thanks the IF2123 Linear Algebra and Geometry course instructors at Bandung Institute of Technology for guidance in this research.
+The author thanks the IF2123 Linear Algebra and Geometry course instructors at Bandung Institute of Technology for guidance in this research. The author also thanks their parents, friends and all the people that have helped them in this task. Lastly the author thanks ChatGPT, Claude Sonnet, Gemini 3 Pro for their helped in this research. 
 
 \begin{thebibliography}{00}
 
@@ -420,26 +430,32 @@ The author thanks the IF2123 Linear Algebra and Geometry course instructors at B
 E. Reinhard, M. Adhikhmin, B. Gooch, and P. Shirley,
 ``Color transfer between images,''
 \textit{IEEE Computer Graphics and Applications}, vol. 21, no. 5, pp. 34--41, 2001.
+[Accessed: Dec. 9, 2025, 05:20]
 
 \bibitem{ruderman1998}
 D. L. Ruderman, T. W. Cronin, and C. C. Chiao,
 ``Statistics of cone responses to natural images: implications for visual coding,''
 \textit{Journal of the Optical Society of America A}, vol. 15, no. 8, pp. 2036--2045, 1998.
+[Accessed: Dec. 9, 2025, 06:00]
 
 \bibitem{pitie2007}
 F. Pitié, A. C. Kokaram, and R. Dahyot,
 ``Automated colour grading using colour distribution transfer,''
 \textit{Computer Vision and Image Understanding}, vol. 107, no. 1-2, pp. 123--137, 2007.
+[Accessed: Dec. 9, 2025, 06:10]
 
 \bibitem{tai2005}
 Y.-W. Tai, J. Jia, and C.-K. Tang,
 ``Local color transfer via probabilistic segmentation by expectation-maximization,''
 \textit{IEEE Conference on Computer Vision and Pattern Recognition (CVPR)}, vol. 1, pp. 747--754, 2005.
+[Accessed: Dec. 9, 2025, 06:20]
 
 \bibitem{gatys2016}
 L. A. Gatys, A. S. Ecker, and M. Bethge,
 ``Image style transfer using convolutional neural networks,''
 \textit{IEEE Conference on Computer Vision and Pattern Recognition (CVPR)}, pp. 2414--2423, 2016.
+[Accessed: Dec. 9, 2025, 06:30]
+
 
 \bibitem{img:fuji} 
 ``View of Mount Fuji from Ōwakudani,''
@@ -486,5 +502,14 @@ Available: \url{https://www.freepik.com/free-photos-vectors/dark-sunset}
         \item GitHub Repository: \url{https://github.com/Res2dinv/Algeo_Makalah.git}
     \end{itemize}
 
+\section*{Pernyataan}
+
+    Dengan ini saya menyatakan bahwa makalah yang saya tulis ini adalah tulisan saya sendiri, bukan saduran, atau terjemahan dari makalah orang lain, dan bukan plagiasi.
+    \begin{flushright}
+    Bandung, 24 Desember 2024\\
+    \includegraphics[width=0.5\linewidth]{src/ttd.png}\\
+    Ishaq Irfan Farizal\\
+    13524094
+    \end{flushright}
 
 \end{document}

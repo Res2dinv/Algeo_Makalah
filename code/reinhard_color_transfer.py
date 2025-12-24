@@ -1,6 +1,5 @@
 """
 Reinhard Color Transfer Implementation
-Implementation of "Color Transfer between Images" by Reinhard et al. (2001)
 Uses orthogonal basis transformation (lαβ space) for decorrelated color manipulation.
 """
 
